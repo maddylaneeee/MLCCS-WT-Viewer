@@ -1,37 +1,34 @@
 # MLCCS-wt-viewer
 
-Minimal Windows GUI viewer for local War Thunder `RendInst` / `DynModel` assets.
+Windows desktop viewer for local War Thunder `RendInst` and `DynModel` assets.
 
-## Status
+## Highlights
 
-- Windows-only project.
-- Source tree is prepared for GitHub publishing.
-- Generated outputs such as `.venv`, `build`, and `dist` are intentionally not part of the repository copy.
+- Scans local `.grp` packs under the War Thunder game directory.
+- Resolves textures from `content/base/res/**/*.dxp.bin` and available `content.hq/**/res/**/*.dxp.bin` packs.
+- Restores common `DynModel` transforms and sibling resources to avoid folded geometry.
+- Handles practical texture and material recovery for local viewing, including `diffuse`, `normal`, `AO`, `mask`, `detail`, and `detail normal` paths.
+- Preserves runtime UV orientation and applies common Dagor shader-family tuning for opaque, cutout, glass, and masked materials.
+- Supports model variants such as base, damage, and x-ray forms.
+- Keeps the GUI responsive with background scanning, vectorized scene extraction, indexed drawing, and staged GPU uploads.
+- Provides bilingual UI support with automatic detection plus manual `English`, `中文`, and `日本語` selection.
+- Includes viewport light presets with remembered user settings.
 
-## Scope
+## Requirements
 
-- User manually selects a War Thunder root folder.
-- The app scans `content/base/res/**/*.grp`.
-- Texture discovery covers `content/base/res/**/*.dxp.bin` plus available `content.hq/**/res/**/*.dxp.bin` packs, and the index is prepared during scan so first model load does not have to rebuild it.
-- Indexed resources include `RendInst` and `DynModel` entries exposed through the `.grp` packs.
-- Models with `*_dmg` / `*_xray` suffixes are grouped under the base name and exposed through a variant selector.
-- Selected models render in an interactive 3D viewport with rotate / pan / zoom.
-- Material approximation includes `diffuse`, `normal`, `AO`, `mask`, `detail`, and `detail normal` when those textures can be resolved from `.dxp.bin` packs, with the runtime UV orientation preserved, Dagor-style normal texture conversion, shader-class-based alpha handling for opaque, cutout, and blended materials, and extra AO/spec/glass tuning for common War Thunder shader families.
-- `DynModel` objects cache sibling resources from the same `.grp` pack so default node transforms and merged skinned mesh geometry can restore the intended pose instead of folded geometry.
-- The viewport exposes light presets plus manual azimuth, elevation, and brightness controls, and the last-used light setup is restored on the next launch.
-- Application branding is renamed to `MLCCS-wt-viewer`, and the `MLCCS.ico` logo is bundled for the packaged app while runtime icon caching still prefers the local cache and refreshes from the configured URL when needed.
-- UI language supports automatic detection from `config.blk` plus manual `English` / `中文` / `日本語` selection.
-- Scanning and CPU scene building run on a background worker, scene extraction is vectorized with NumPy for heavy models, batches are uploaded with indexed drawing (`VBO + EBO`, with `uint16` indices when possible), repeated GPU texture uploads are deduplicated within the current scene, and GPU uploads are batched across frames so the GUI remains responsive during heavy loads.
-- No full Dagor material recreation, no animation playback, no effects, no LOD switching.
+- Windows 10 or newer
+- Python 3.10 when running from source
+- A local War Thunder installation or extracted asset directory
 
-## Run
+## Running From Source
 
 ```powershell
+python -m venv .venv
 .\.venv\Scripts\python -m pip install -r requirements.txt
 .\.venv\Scripts\python -m wt_model_viewer.main
 ```
 
-## Test
+## Testing
 
 ```powershell
 .\.venv\Scripts\python -m unittest discover -s tests
@@ -44,11 +41,19 @@ Minimal Windows GUI viewer for local War Thunder `RendInst` / `DynModel` assets.
 .\build.ps1
 ```
 
-The packaged executable is written under `dist\MLCCS-wt-viewer\`.
+The packaged application is written to `dist\MLCCS-wt-viewer\`.
 
-## GitHub Publishing
+## Repository Layout
 
-- `.gitignore` and `.gitattributes` are included for a clean repository import.
-- A GitHub Actions workflow is included at `.github/workflows/windows-ci.yml`.
-- Publish steps are documented in `PUBLISHING.md`.
-- A `LICENSE` file is still intentionally absent until you choose the release terms.
+- `src/wt_model_viewer/`: application code
+- `tests/`: automated tests
+- `vendor/dae_runtime/`: bundled runtime parser and native dependencies
+- `.github/workflows/windows-ci.yml`: Windows CI build and verification workflow
+
+## Scope Notes
+
+This project is intended as a practical local viewer. It does not currently attempt to fully reproduce Dagor rendering, animations, effects, or LOD switching.
+
+## License
+
+Released under the [MIT License](LICENSE).
