@@ -3,8 +3,7 @@
 ## Before First Push
 
 1. Set your local Git identity.
-2. Decide which open-source or private license the repository should use.
-3. Create an empty GitHub repository.
+2. Create an empty GitHub repository.
 
 ```powershell
 git config --global user.name "Your Name"
@@ -30,8 +29,8 @@ git push -u origin main
 
 Attach the generated `dist\MLCCS-wt-viewer` folder or a zip exported from it to a GitHub Release.
 
-## Current Repository Prep
+## Repository Notes
 
 - Generated outputs and local virtual environments are ignored by Git.
 - A Windows GitHub Actions workflow is included to run tests, `compileall`, and the PyInstaller build on pushes and pull requests.
-- No `LICENSE` file is included yet because that choice must be made explicitly before a public release.
+- The repository is released under the MIT License.
