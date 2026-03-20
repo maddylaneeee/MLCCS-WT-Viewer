@@ -5,13 +5,19 @@ project_root = Path.cwd()
 src_root = project_root / "src"
 script_path = project_root / "luncher.py"
 icon_path = src_root / "wt_model_viewer" / "assets" / "MLCCS.ico"
+release_package_path = project_root / "dist" / "MLCCS-wt-viewer-win64.zip"
+release_checksum_path = project_root / "dist" / "MLCCS-wt-viewer-win64.zip.sha256"
 
 
 a = Analysis(
     [str(script_path)],
     pathex=[str(project_root), str(src_root)],
     binaries=[],
-    datas=[(str(icon_path), "wt_model_viewer/assets")],
+    datas=[
+        (str(icon_path), "wt_model_viewer/assets"),
+        (str(release_package_path), "."),
+        (str(release_checksum_path), "."),
+    ],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

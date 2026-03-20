@@ -27,7 +27,14 @@ git push -u origin main
 .\build.ps1
 ```
 
-Attach the generated `dist\MLCCS-wt-viewer` folder or a zip exported from it to a GitHub Release.
+Generated outputs:
+
+- `dist\MLCCS-wt-viewer\` - unpacked packaged app
+- `dist\MLCCS-wt-viewer-win64.zip` - prebuilt release package consumed by `luncher.exe`
+- `dist\MLCCS-wt-viewer-win64.zip.sha256` - optional checksum file consumed by `luncher.exe`
+- `dist\luncher.exe` - bootstrap installer that embeds the release package for clean-machine installation
+
+Publish `MLCCS-wt-viewer-win64.zip` and `MLCCS-wt-viewer-win64.zip.sha256` to `https://lixinchen.ca/docs/`.
 
 ## Repository Notes
 

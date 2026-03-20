@@ -17,7 +17,7 @@ Windows desktop viewer for local War Thunder `RendInst` and `DynModel` assets.
 ## Requirements
 
 - Windows 10 or newer
-- Python 3.10 or newer when running from source
+- Python 3.10 or newer when running from source or building release artifacts
 - PowerShell 5.1 or newer for `build.ps1`
 - A local War Thunder installation or extracted asset directory
 
@@ -45,21 +45,24 @@ python -m venv .venv
 Build outputs:
 
 - Main application: `dist\MLCCS-wt-viewer\MLCCS-wt-viewer.exe`
+- Release package for launcher deployment: `dist\MLCCS-wt-viewer-win64.zip`
+- Release package checksum: `dist\MLCCS-wt-viewer-win64.zip.sha256`
 - Launcher: `dist\luncher.exe`
 
 ## Launcher
 
-`luncher.exe` is a simple installer bootstrap for this project. It downloads the published project zip, extracts it, runs `build.ps1`, then offers to create a desktop shortcut and launch the built application.
+`luncher.exe` is a Windows bootstrap installer for this project. The packaged onefile launcher embeds the prebuilt application package and can install on a clean client machine without Python, pip, a virtual environment, or PyInstaller. If no embedded package is available, the source form can still fall back to the published download URL.
 
 Current launcher behavior:
 
-- Downloads `https://lixinchen.ca/docs/MLCCS-wt-viewer.zip`
+- Uses the embedded `MLCCS-wt-viewer-win64.zip` package when running the packaged launcher
+- Optionally verifies the embedded or remote SHA256 checksum when available
+- Falls back to `https://lixinchen.ca/docs/MLCCS-wt-viewer-win64.zip` only when no embedded package is present
 - Extracts into a local install workspace
-- Creates a `.venv` if needed
-- Runs the bundled `build.ps1`
+- Replaces the previous installed app directory in one step
 - Starts `MLCCS-wt-viewer.exe` after installation if the user chooses to do so
 
-Because the launcher builds from source, the target machine still needs a usable Python 3.10+ environment.
+The target machine does not need Python, pip, a virtual environment, or PyInstaller. The packaged launcher already carries the release payload it needs.
 
 ## Repository Layout
 
@@ -67,6 +70,7 @@ Because the launcher builds from source, the target machine still needs a usable
 - `tests/`: automated tests
 - `vendor/dae_runtime/`: bundled parser and native runtime dependencies
 - `luncher.py`: launcher source
+- `dist\MLCCS-wt-viewer-win64.zip`: release package consumed by the launcher
 - `WTModelViewer.spec`: PyInstaller spec for the main application
 - `luncher.spec`: PyInstaller spec for the launcher
 - `.github/workflows/windows-ci.yml`: Windows CI build and verification workflow

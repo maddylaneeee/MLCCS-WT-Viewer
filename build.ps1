@@ -1,8 +1,15 @@
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
+$appName = "MLCCS-wt-viewer"
+$releasePackageName = "MLCCS-wt-viewer-win64.zip"
 $venvPython = Join-Path $root ".venv\Scripts\python.exe"
 $pyinstaller = Join-Path $root ".venv\Scripts\pyinstaller.exe"
+$distRoot = Join-Path $root "dist"
+$appDistDir = Join-Path $distRoot $appName
+$releasePackagePath = Join-Path $distRoot $releasePackageName
+$releaseChecksumPath = "$releasePackagePath.sha256"
+$launcherPath = Join-Path $distRoot "luncher.exe"
 
 function Find-PythonCommand {
     $candidates = @(
@@ -33,6 +40,64 @@ function Find-PythonCommand {
     throw "Python 3.10 or newer is required to bootstrap the build environment."
 }
 
+function New-ReleasePackage {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$SourceDir,
+        [Parameter(Mandatory = $true)]
+        [string]$ZipPath
+    )
+
+    if (-not (Test-Path $SourceDir)) {
+        throw "Release source directory not found: $SourceDir"
+    }
+
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+    if (Test-Path $ZipPath) {
+        Remove-Item $ZipPath -Force
+    }
+
+    [System.IO.Compression.ZipFile]::CreateFromDirectory(
+        $SourceDir,
+        $ZipPath,
+        [System.IO.Compression.CompressionLevel]::Optimal,
+        $true
+    )
+
+    $hash = (Get-FileHash -Path $ZipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    Set-Content -Path "$ZipPath.sha256" -Value "$hash  $(Split-Path -Leaf $ZipPath)" -Encoding ascii
+}
+
+function Test-LauncherBundle {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$LauncherPath
+    )
+
+    if (-not (Test-Path $LauncherPath)) {
+        throw "Launcher executable not found: $LauncherPath"
+    }
+
+    $validationScript = @"
+from pathlib import Path
+from PyInstaller.archive.readers import CArchiveReader
+
+launcher = Path(r"$LauncherPath")
+archive = CArchiveReader(str(launcher))
+required = {"MLCCS-wt-viewer-win64.zip", "MLCCS-wt-viewer-win64.zip.sha256"}
+missing = sorted(required - set(archive.toc.keys()))
+if missing:
+    raise SystemExit(f"Launcher bundle is missing embedded payload: {', '.join(missing)}")
+print(f"Validated launcher payload: {launcher}")
+"@
+
+    $validationScript | & $venvPython -
+    if ($LASTEXITCODE -ne 0) {
+        throw "Launcher payload validation failed"
+    }
+}
+
 if (-not (Test-Path $venvPython)) {
     $pythonCommand = Find-PythonCommand
     $pythonArgs = @()
@@ -59,12 +124,21 @@ try {
         throw "Dependency install failed"
     }
 
-    foreach ($specName in @("WTModelViewer.spec", "luncher.spec")) {
-        & $pyinstaller --noconfirm --clean (Join-Path $root $specName)
-        if ($LASTEXITCODE -ne 0) {
-            throw "PyInstaller build failed for $specName"
-        }
+    & $pyinstaller --noconfirm --clean (Join-Path $root "WTModelViewer.spec")
+    if ($LASTEXITCODE -ne 0) {
+        throw "PyInstaller build failed for WTModelViewer.spec"
     }
+
+    New-ReleasePackage -SourceDir $appDistDir -ZipPath $releasePackagePath
+    Write-Host "Release package created: $releasePackagePath"
+    Write-Host "Release checksum created: $releaseChecksumPath"
+
+    & $pyinstaller --noconfirm --clean (Join-Path $root "luncher.spec")
+    if ($LASTEXITCODE -ne 0) {
+        throw "PyInstaller build failed for luncher.spec"
+    }
+
+    Test-LauncherBundle -LauncherPath $launcherPath
 }
 finally {
     Pop-Location
